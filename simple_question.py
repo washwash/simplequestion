@@ -21,14 +21,18 @@ class DB:
             self.cursor = self.conn.cursor()
 
         def __enter__(self):
-            return self.cursor
+            return self
 
         def __exit__(self, type, value, traceback):
             self.conn.close()
 
+        def execute(self, sql):
+            self.cursor.execute(sql)
+            self.conn.commit()
+
     def __init__(self):
-        with self.manager() as cur:
-            cur.execute(
+        with self.manager() as m:
+            m.execute(
                 '''
                 CREATE TABLE IF NOT EXISTS "sq.actions" (
                     "id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,8 +44,8 @@ class DB:
             )
 
     def execute(self, sql):
-        with self.manager() as cur:
-            cur.execute(sql)
+        with self.manager() as m:
+            m.execute(sql)
 
 
 class Strategy:
