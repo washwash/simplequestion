@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import sqlite3
 import random
 from datetime import datetime
+
+
+from db_schemas import Action, User
 
 
 logging.basicConfig(
@@ -14,44 +16,9 @@ logging.basicConfig(
 )
 
 
-class DB:
-    class manager:
-        def __init__(self):
-            self.conn = sqlite3.connect('sq.db')
-            self.cursor = self.conn.cursor()
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, type, value, traceback):
-            self.conn.close()
-
-        def execute(self, sql):
-            self.cursor.execute(sql)
-            self.conn.commit()
-
-    def __init__(self):
-        with self.manager() as m:
-            m.execute(
-                '''
-                CREATE TABLE IF NOT EXISTS "sq.actions" (
-                    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "what" TEXT,
-                    "who" TEXT,
-                    "at" REAL
-                );
-                '''
-            )
-
-    def execute(self, sql):
-        with self.manager() as m:
-            m.execute(sql)
-
-
 class Strategy:
-    def __init__(self, args, db):
+    def __init__(self, args):
         self._args = args
-        self._db = db
 
     def process(self):
         raise NotImplementedError(
@@ -62,6 +29,8 @@ class Strategy:
 
 
 class FromStrategy(Strategy):
+    action = Action()
+    user = User()
 
     success_messages = [
         'Okay, I have remembered the question from {who} at {at}',
@@ -70,14 +39,11 @@ class FromStrategy(Strategy):
     ]
 
     def process(self):
-        self._db.execute(
-            '''
-            INSERT INTO "sq.actions" ("what", "who", "at")
-            VALUES ("from",  "{who}", "{at}");
-            '''.format(
-                who=self._args.who,
-                at=self._args.at
-            )
+        user = self.user.insert(self._args.who)
+        self.action.insert(
+            what='from',
+            user=user,
+            at=int(self._args.at.timestamp())
         )
         logging.info(
             random.choice(self.success_messages).format(
@@ -102,7 +68,7 @@ STRATEGY = {
 def simple_question():
     args = init_arguments()
 
-    strategy = STRATEGY[args.what](args, DB())
+    strategy = STRATEGY[args.what](args)
     strategy.process()
 
 
