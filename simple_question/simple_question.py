@@ -5,30 +5,27 @@ import random
 from datetime import datetime
 
 
-from db_schemas import Action, User
+from db_schemas import (
+    Action, 
+    User
+)
+from bases import (
+    Argument, 
+    DateArgument, 
+    Strategy
+)
 
 
 logging.basicConfig(
     level=logging.INFO,
-    handlers=[
-        logging.StreamHandler()
-    ]
+    handlers=[logging.StreamHandler(), ]
 )
 
 
-class Strategy:
-    def __init__(self, args):
-        self._args = args
-
-    def process(self):
-        raise NotImplementedError(
-            '{} does not have process method'.format(
-                self.__class__.__name__
-            )
-        )
-
-
 class FromStrategy(Strategy):
+    who = Argument('`who` (diverted you)')
+    when = DateArgument('`when` (it happend)')
+
     action = Action()
     user = User()
 
@@ -39,24 +36,37 @@ class FromStrategy(Strategy):
     ]
 
     def process(self):
-        user = self.user.insert(self._args.who)
+        user = self.user.insert(self.who)
         self.action.insert(
             what='from',
             user=user,
-            at=int(self._args.at.timestamp())
+            at=int(self.when.timestamp())
         )
         logging.info(
             random.choice(self.success_messages).format(
-                who=self._args.who,
-                at=self._args.at
+                who=self.who,
+                at=self.when
             )
         )
 
 
 class ToStrategy(Strategy):
+    who = Argument('`who` (diverted you)')
+    when = DateArgument('`when` (it happend)')
+
+    action = Action()
+    user = User()
 
     def process(self):
-        logging.info('To st')
+        user = self.user.insert(self.who)
+        self.action.insert(
+            what='to',
+            user=user,
+            at=int(self.when.timestamp())
+        )
+        logging.info(
+            f'Oks, question from you to {self.who}'
+        )
 
 
 STRATEGY = {
@@ -68,22 +78,31 @@ STRATEGY = {
 def simple_question():
     args = init_arguments()
 
-    strategy = STRATEGY[args.what](args)
+    strategy = STRATEGY[args.what](args.args)
     strategy.process()
 
 
+def get_args_description():
+    commands = [
+        f'{what} {s.describe_args()}' 
+        for what, s in STRATEGY.items()
+    ]
+    return '\n'.join(commands)
+ 
+
 def init_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'what', type=str
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument(
-        'who', type=str
+        'what', 
+        type=str,
     )
     parser.add_argument(
-        '-at',
-        default=datetime.now(),
-        required=False
+        'args', 
+        type=str, 
+        nargs='+',
+        help=get_args_description()
     )
     return parser.parse_args()
 

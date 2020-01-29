@@ -48,7 +48,8 @@ class Action(Executor):
                 "what" TEXT,
                 "user" INTEGER,
                 "at" REAL,
-                FOREIGN KEY(user) REFERENCES user(id)
+                FOREIGN KEY(user) REFERENCES user(id),
+                CONSTRAINT Check_ActionType CHECK (what in ('from', 'to'))
             );
         ''')
 
@@ -87,3 +88,4 @@ class User(Executor):
             VALUES ("{name}");
         '''
         )
+
