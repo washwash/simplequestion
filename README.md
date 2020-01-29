@@ -1,4 +1,4 @@
-### simplequestion
+# simplequestion
 simple disturbance calendar with one aim - answering questions "why on earth do you ping me again"
 
 ## Usage
@@ -19,4 +19,4 @@ python simple_question.py -h
 ```
 
 ## Questions
-Just use simplequestion 
+Just use simplequestion
