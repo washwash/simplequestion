@@ -65,7 +65,7 @@ class ToStrategy(Strategy):
             at=int(self.when.timestamp())
         )
         logging.info(
-            f'Oks, question from you to {self.who}'
+            f'Oks, question from you to {self.who} at {self.when}'
         )
 
 

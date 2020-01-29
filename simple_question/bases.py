@@ -26,6 +26,9 @@ class DateArgument(Argument):
         ]
 
     def _parse_input_value(self, value):
+        if isinstance(value, datetime):
+            return value
+
         for input_format in self._input_formats:
             try:
                 return datetime.strptime(value, input_format)
@@ -70,13 +73,17 @@ class Strategy(metaclass=ArgumentsMeta):
         raise NotImplementedError
 
     def parse_args(self, args):
-        if len(args) < 2:
+        if not args:
              raise ValueError(
-                f'{self} needs at least `who` and `when`'
+                f'{self} needs at least `who`. Current time will be taken as `when`'
             )
 
-        self.who, self.when, *self.others = args
-            
+        self.who = args[0]
+        self.when = (
+            args[1] if len(args) > 1 else 
+            datetime.now()
+        )
+
     @classmethod
     def describe_args(cls):
         return ' '.join([
