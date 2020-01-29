@@ -3,6 +3,7 @@ import argparse
 import logging
 import random
 from datetime import datetime
+from matplotlib import pyplot
 
 
 from db_schemas import (
@@ -12,7 +13,9 @@ from db_schemas import (
 from bases import (
     Argument, 
     DateArgument, 
-    Strategy
+    Strategy,
+    WhoWhenParseArgsMixin,
+
 )
 
 
@@ -22,9 +25,12 @@ logging.basicConfig(
 )
 
 
-class FromStrategy(Strategy):
+class FromStrategy(WhoWhenParseArgsMixin, Strategy):
     who = Argument('`who` (diverted you)')
-    when = DateArgument('`when` (it happend)')
+    when = DateArgument(
+        '`when` (it happend)',
+        default=datetime.now()
+    )
 
     action = Action()
     user = User()
@@ -50,9 +56,12 @@ class FromStrategy(Strategy):
         )
 
 
-class ToStrategy(Strategy):
-    who = Argument('`who` (diverted you)')
-    when = DateArgument('`when` (it happend)')
+class ToStrategy(WhoWhenParseArgsMixin, Strategy):
+    who = Argument('`who` (you diverted)')
+    when = DateArgument(
+        '`when` (it happend)',
+        default=datetime.now()
+    )
 
     action = Action()
     user = User()
@@ -69,9 +78,25 @@ class ToStrategy(Strategy):
         )
 
 
+class VisualizeStrategy(Strategy):
+    whose = Argument(
+        '`whose` (question are you interested)', 
+        default='all'
+    )
+
+    def parse_args(self, args):
+        self.whose = args[0]
+
+    def process(self):
+        figure = pyplot.figure()
+        figure.suptitle('questions')
+        figure.show('img.svg')
+
+
 STRATEGY = {
     'from': FromStrategy,
-    'to': ToStrategy
+    'to': ToStrategy,
+    'show': VisualizeStrategy
 }
 
 

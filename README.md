@@ -1,5 +1,5 @@
 # simplequestion
-simple disturbance calendar with one aim - answering questions "why on earth do you ping me again"
+Disturbance tracker with one goal - help with answer to question "why on earth do you ping me again"
 
 ## Usage
 If it was a super simple very little prima quick question from Ivan at 21:23

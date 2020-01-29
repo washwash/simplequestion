@@ -3,11 +3,14 @@ from datetime import datetime
 
 class Argument:
 
-    def __init__(self, doc):
+    def __init__(self, doc, default=None):
         self._value = None
         self._doc = doc
+        self._default = default
 
     def __get__(self, instance, owner):
+        if self._default and not self._value:
+            return self._default
         return self._value
 
     def __set__(self, instance, value):
@@ -50,16 +53,16 @@ class DateArgument(Argument):
 
 class ArgumentsMeta(type):
 
-    @classmethod
-    def _declare_arguments(cls, bases, dct):
-        cls._declared_arguments = {
+    @staticmethod
+    def _declare_arguments(klass, bases, dct):
+        klass._declared_arguments = {
             k: v for k, v in dct.items()
             if isinstance(v, Argument)
         }
 
     def __new__(cls, name, bases, dct):
         klass = super().__new__(cls, name, bases, dct)
-        klass._declare_arguments(bases, dct)
+        klass._declare_arguments(klass, bases, dct)
         return klass
 
 
@@ -73,21 +76,23 @@ class Strategy(metaclass=ArgumentsMeta):
         raise NotImplementedError
 
     def parse_args(self, args):
-        if not args:
-             raise ValueError(
-                f'{self} needs at least `who`. Current time will be taken as `when`'
-            )
-
-        self.who = args[0]
-        self.when = (
-            args[1] if len(args) > 1 else 
-            datetime.now()
-        )
-
+        raise NotImplementedError
+        
     @classmethod
     def describe_args(cls):
         return ' '.join([
             f.get_doc() for f in 
             cls._declared_arguments.values()
         ])
+
+
+class WhoWhenParseArgsMixin:
+    
+    def parse_args(self, args):
+        if not args:
+             raise ValueError(f'{self} needs at least `who`')
+
+        self.who = args[0]
+        if len(args) > 1:
+            self.when = args[1]
 
