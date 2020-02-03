@@ -3,7 +3,7 @@ import argparse
 import logging
 import random
 from datetime import datetime
-from matplotlib import pyplot
+from collections import defaultdict
 
 
 from db_schemas import (
@@ -17,6 +17,7 @@ from bases import (
     WhoWhenParseArgsMixin,
 
 )
+from painter import Painter
 
 
 logging.basicConfig(
@@ -30,7 +31,7 @@ class FromStrategy(WhoWhenParseArgsMixin, Strategy):
     when = DateArgument(
         '`when` (it happend)',
         default=datetime.now()
-    )
+        )
 
     action = Action()
     user = User()
@@ -79,18 +80,50 @@ class ToStrategy(WhoWhenParseArgsMixin, Strategy):
 
 
 class VisualizeStrategy(Strategy):
-    whose = Argument(
-        '`whose` (question are you interested)', 
-        default='all'
+    where = Argument(
+        '`where` (questions from or to)'
     )
+ 
+    action = Action()
+    user = User()
+
+    painter = Painter()
 
     def parse_args(self, args):
-        self.whose = args[0]
+        self.where = args[0]
 
     def process(self):
-        figure = pyplot.figure()
-        figure.suptitle('questions')
-        figure.show('img.svg')
+        records = self.action.all(
+            fields=(
+                'action.what',
+                'action.at',
+                'user.name'
+            )
+        )
+        filtered_records = self._filter_records(records)
+        data = self._parse_records(filtered_records)
+        self.painter.draw(data)
+
+    def _parse_records(self, records):
+        split_map = defaultdict(list)
+        for record in records:
+            date = datetime.fromtimestamp(record[1])
+            split_map[(date.year, date.month, date.day)].append(
+                [record[0], date, record[2]]
+            )
+
+        result = []
+        for k in sorted(split_map.keys()):
+            result.append(
+                sorted(split_map[k], key=lambda r: r[1])
+            )
+        return result
+
+    def _filter_records(self, records):
+        return list(filter(
+            lambda r: r[0] == self.where, 
+            records
+        ))
 
 
 STRATEGY = {

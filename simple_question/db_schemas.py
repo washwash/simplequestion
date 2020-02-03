@@ -61,8 +61,18 @@ class Action(Executor):
         return self._db.insert(f'''
             INSERT INTO "action" ("what", "user", "at")
             VALUES ("{what}",  "{user}", "{at}");
-        '''
-        )
+        ''')
+
+    def all(self, fields=None):
+        if not fields:
+            fields = '*'
+        else:
+            fields = ', '.join(fields)
+
+        return self._db.execute(f'''
+            SELECT {fields} FROM "action" 
+            JOIN "user" ON user.id=action.user;
+        ''')
 
 
 class User(Executor):
